@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LandslideAI – Early Warning System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0b0f1a;
+      --surface:    #131929;
+      --surface2:   #1a2236;
+      --border:     #243050;
+      --accent:     #f05c3c;
+      --accent2:    #4f8ef7;
+      --text:       #e8edf5;
+      --muted:      #7a8aaa;
+      --safe:       #22c55e;
+      --warn:       #f59e0b;
+      --danger:     #ef4444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background grid ─────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(79,142,247,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,142,247,.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── Nav ──────────────────────────────────────── */
+    nav {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,15,26,.85);
+      backdrop-filter: blur(12px);
+    }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; }
+    .logo span { color: var(--accent); }
+    .badge {
+      background: rgba(240,92,60,.15); color: var(--accent);
+      border: 1px solid rgba(240,92,60,.3);
+      padding: .25rem .75rem; border-radius: 999px; font-size: .75rem; font-weight: 600;
+    }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      text-align: center; padding: 4rem 2rem 2.5rem;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1;
+      letter-spacing: -1px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p { color: var(--muted); margin-top: .75rem; max-width: 540px; margin-inline: auto; font-size: 1.05rem; }
+
+    /* ── Stats strip ──────────────────────────────── */
+    .stats-strip {
+      position: relative; z-index: 1;
+      display: flex; justify-content: center; gap: 1.5rem;
+      flex-wrap: wrap; padding: .5rem 2rem 2rem;
+    }
+    .stat-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .6rem 1.4rem;
+      text-align: center;
+    }
+    .stat-pill .val { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+    .stat-pill .lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Main grid ────────────────────────────────── */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1.5rem; padding: 0 2rem 4rem;
+    }
+    @media(max-width: 760px) { .main { grid-template-columns: 1fr; } }
+
+    /* ── Cards ────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px; padding: 1.75rem;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1.05rem; margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .card-title .icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(240,92,60,.15);
+      display: grid; place-items: center; font-size: .9rem;
+    }
+
+    /* ── Form fields ──────────────────────────────── */
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .35rem; text-transform: uppercase; letter-spacing: .05em; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+    input[type=number], select {
+      width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px;
+      padding: .65rem 1rem; font-size: .95rem; font-family: inherit;
+      transition: border-color .2s;
+      appearance: none;
+    }
+    input[type=number]:focus, select:focus { outline: none; border-color: var(--accent2); }
+
+    /* Sliders */
+    .slider-wrap { position: relative; }
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; height: 6px;
+      background: var(--surface2); border-radius: 3px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent2); cursor: pointer; border: 2px solid var(--bg);
+    }
+    .slider-labels { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); margin-top: .3rem; }
+    .slider-val { color: var(--accent2); font-weight: 600; }
+
+    /* ── Predict button ───────────────────────────── */
+    .btn-predict {
+      width: 100%; padding: .9rem;
+      background: linear-gradient(135deg, #f05c3c, #e03020);
+      border: none; border-radius: 12px;
+      color: #fff; font-family: 'Syne', sans-serif;
+      font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; letter-spacing: .03em;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 20px rgba(240,92,60,.35);
+      margin-top: .5rem;
+    }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(240,92,60,.5); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* ── Result panel ─────────────────────────────── */
+    #result-card { display: none; }
+    #result-card.visible { display: block; }
+
+    .risk-ring {
+      width: 130px; height: 130px; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+      border: 4px solid currentColor;
+      transition: all .4s;
+    }
+    .risk-pct { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; }
+    .risk-lbl { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; margin-top: .2rem; }
+
+    .risk-badge {
+      text-align: center; padding: .45rem 1.25rem;
+      border-radius: 999px; font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: .9rem;
+      display: block; width: fit-content; margin: 0 auto 1.25rem;
+    }
+
+    .factors-list { list-style: none; }
+    .factors-list li {
+      padding: .5rem .75rem; margin-bottom: .4rem;
+      background: var(--surface2); border-radius: 8px;
+      font-size: .87rem; display: flex; align-items: center; gap: .5rem;
+    }
+    .factors-list li::before { content: '⚠'; font-size: .8rem; }
+
+    /* ── Charts section ───────────────────────────── */
+    .charts-section {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+    .charts-section h2 {
+      font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700;
+      margin-bottom: 1.25rem;
+    }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 1.25rem; text-align: center;
+    }
+    .chart-card p { color: var(--muted); font-size: .82rem; margin-bottom: .75rem; }
+    .chart-card img { width: 100%; border-radius: 8px; }
+
+    /* ── Model table ──────────────────────────────── */
+    .model-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .model-table th { color: var(--muted); text-align: left; padding: .4rem .5rem; font-weight: 500; font-size: .75rem; text-transform: uppercase; }
+    .model-table td { padding: .45rem .5rem; border-top: 1px solid var(--border); }
+    .model-table .best-row td { color: var(--accent); font-weight: 600; }
+    .acc-bar { height: 6px; border-radius: 3px; background: var(--accent2); display: inline-block; }
+
+    /* ── Loader ───────────────────────────────────── */
+    .loader { display: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .7s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Fade-in ──────────────────────────────────── */
+    @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp .4s ease both; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Landslide<span>AI</span></div>
+  <span class="badge">ML Early Warning</span>
+</nav>
+
+<div class="hero">
+  <h1>Predict Landslide <em>Risk</em><br>Before It Strikes</h1>
+  <p>Machine Learning model trained on rainfall, terrain & soil data. Enter local conditions to assess risk level.</p>
+</div>
+
+<!-- Stats strip -->
+<div class="stats-strip">
+  <div class="stat-pill">
+    <div class="val">{{ stats.accuracy }}%</div>
+    <div class="lbl">Model Accuracy</div>
+  </div>
+  <div class="stat-pill">
+    <div class="val">{{ stats.auc }}%</div>
+    <div class="lbl">AUC Score</div>
+  </div>
+  <div class="stat-pill">
+    <div class="val">{{ stats.best_model.split()[0] }}</div>
+    <div class="lbl">Algorithm</div>
+  </div>
+  <div class="stat-pill">
+    <div class="val">7</div>
+    <div class="lbl">Input Features</div>
+  </div>
+</div>
+
+<!-- Main grid -->
+<div class="main">
+
+  <!-- INPUT FORM ─────────────────────── -->
+  <div class="card fade-up">
+    <div class="card-title"><span class="icon">🌧</span> Environmental Parameters</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>24h Rainfall (mm)</label>
+        <input type="number" id="rainfall_24h" placeholder="e.g. 80" min="0" max="300" step="0.1"/>
+      </div>
+      <div class="field">
+        <label>Weekly Rainfall (mm)</label>
+        <input type="number" id="weekly_rain" placeholder="e.g. 200" min="0" max="800" step="0.1"/>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Slope Angle (°)</label>
+        <input type="number" id="slope" placeholder="e.g. 35" min="5" max="70" step="0.1"/>
+      </div>
+      <div class="field">
+        <label>Elevation (m)</label>
+        <input type="number" id="elevation" placeholder="e.g. 800" min="100" max="3000" step="1"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Soil Type</label>
+      <select id="soil_type">
+        <option value="0">Clay (High Risk)</option>
+        <option value="1">Sandy (Medium-High Risk)</option>
+        <option value="2" selected>Loam (Medium Risk)</option>
+        <option value="3">Rocky (Low Risk)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Vegetation Cover – <span class="slider-val" id="veg_val">50</span>%</label>
+      <div class="slider-wrap">
+        <input type="range" id="vegetation" min="0" max="100" value="50"
+               oninput="document.getElementById('veg_val').textContent=this.value"/>
+      </div>
+      <div class="slider-labels"><span>Bare (0%)</span><span>Dense (100%)</span></div>
+    </div>
+
+    <div class="field">
+      <label>Soil Moisture – <span class="slider-val" id="moist_val">50</span>%</label>
+      <div class="slider-wrap">
+        <input type="range" id="moisture" min="10" max="100" value="50"
+               oninput="document.getElementById('moist_val').textContent=this.value"/>
+      </div>
+      <div class="slider-labels"><span>Dry (10%)</span><span>Saturated (100%)</span></div>
+    </div>
+
+    <button class="btn-predict" id="predictBtn" onclick="predict()">
+      <span id="btnText">⚡ Analyze Risk</span>
+      <span class="loader" id="loader"></span>
+    </button>
+  </div>
+
+  <!-- RESULT PANEL ───────────────────── -->
+  <div>
+    <div class="card fade-up" id="result-card">
+      <div class="card-title"><span class="icon">📊</span> Prediction Result</div>
+
+      <div id="risk-ring" class="risk-ring">
+        <span class="risk-pct" id="risk-pct">--</span>
+        <span class="risk-lbl">Probability</span>
+      </div>
+
+      <span class="risk-badge" id="risk-badge">–</span>
+
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;">Contributing factors:</p>
+      <ul class="factors-list" id="factors-list"></ul>
+    </div>
+
+    <!-- Model stats card -->
+    <div class="card fade-up" style="margin-top:1.25rem;">
+      <div class="card-title"><span class="icon">🧠</span> Model Performance</div>
+      <table class="model-table">
+        <thead><tr><th>Model</th><th>Accuracy</th><th>AUC</th></tr></thead>
+        <tbody>
+        {% for name, m in stats.models.items() %}
+          <tr class="{{ 'best-row' if name == stats.best_model else '' }}">
+            <td>{{ name }}{{ ' ✓' if name == stats.best_model else '' }}</td>
+            <td>
+              <span class="acc-bar" style="width:{{ m.acc * 0.6 }}px"></span>
+              {{ m.acc }}%
+            </td>
+            <td>{{ m.auc }}%</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Charts section -->
+<div class="charts-section">
+  <h2>📈 Analysis Charts</h2>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <p>Model Accuracy Comparison</p>
+      <img src="/static/model_comparison.png" alt="Model Comparison"/>
+    </div>
+    <div class="chart-card">
+      <p>Feature Importance</p>
+      <img src="/static/feature_importance.png" alt="Feature Importance"/>
+    </div>
+    <div class="chart-card">
+      <p>Confusion Matrix</p>
+      <img src="/static/confusion_matrix.png" alt="Confusion Matrix"/>
+    </div>
+  </div>
+</div>
+
+<script>
+async function predict() {
+  const btn  = document.getElementById("predictBtn");
+  const txt  = document.getElementById("btnText");
+  const ldr  = document.getElementById("loader");
+
+  // Validate
+  const fields = ["rainfall_24h","weekly_rain","slope","elevation"];
+  for (const f of fields) {
+    if (!document.getElementById(f).value) {
+      alert("Please fill in all numeric fields."); return;
+    }
+  }
+
+  btn.disabled = true; txt.style.display = "none"; ldr.style.display = "block";
+
+  const payload = {
+    rainfall_24h: document.getElementById("rainfall_24h").value,
+    weekly_rain:  document.getElementById("weekly_rain").value,
+    slope:        document.getElementById("slope").value,
+    elevation:    document.getElementById("elevation").value,
+    soil_type:    document.getElementById("soil_type").value,
+    vegetation:   document.getElementById("vegetation").value,
+    moisture:     document.getElementById("moisture").value,
+  };
+
+  try {
+    const res  = await fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.error) { alert("Error: " + data.error); return; }
+
+    // Update UI
+    const card  = document.getElementById("result-card");
+    const ring  = document.getElementById("risk-ring");
+    const pct   = document.getElementById("risk-pct");
+    const badge = document.getElementById("risk-badge");
+    const list  = document.getElementById("factors-list");
+
+    pct.textContent   = data.probability + "%";
+    badge.textContent = data.risk_level;
+    ring.style.color  = data.risk_color;
+    badge.style.background = data.risk_color + "22";
+    badge.style.color      = data.risk_color;
+    badge.style.border     = `1px solid ${data.risk_color}55`;
+
+    list.innerHTML = data.factors.map(f => `<li>${f}</li>`).join("");
+
+    card.classList.add("visible");
+    card.scrollIntoView({behavior:"smooth", block:"nearest"});
+
+  } catch(e) {
+    alert("Connection error. Make sure Flask is running.");
+  } finally {
+    btn.disabled = false; txt.style.display = ""; ldr.style.display = "none";
+  }
+}
+</script>
+</body>
+</html>
