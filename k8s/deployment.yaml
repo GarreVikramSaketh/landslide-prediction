@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landslide-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: landslide
+  template:
+    metadata:
+      labels:
+        app: landslide
+    spec:
+      containers:
+      - name: landslide-container
+        image: yourdockerhubusername/landslide-app
+        ports:
+        - containerPort: 5000
