@@ -13,7 +13,8 @@ spec:
         app: landslide
     spec:
       containers:
-      - name: landslide-container
-        image: yourdockerhubusername/landslide-app
-        ports:
-        - containerPort: 5000
+        - name: landslide-container
+          image: vikamsakethgarre/landslide-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
