@@ -8,12 +8,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
-    steps {
-        git branch: 'main', url: 'https://github.com/GarreVikramSaketh/landslide-prediction.git'
-    }
-}
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:$IMAGE_TAG .'
@@ -31,9 +25,13 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                sh '''
+                docker stop landslide || true
+                docker rm landslide || true
+                docker run -d -p 80:5000 --name landslide $DOCKER_IMAGE:latest
+                '''
             }
         }
     }
