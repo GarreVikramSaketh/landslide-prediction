@@ -29,38 +29,40 @@ pipeline {
             }
         }
 
-        stage('Deploy (Blue-Green)') {
+        stage('Deploy (Blue-Green - EC2)') {
             steps {
                 sh '''
                 echo "Starting Blue-Green Deployment..."
 
-                # Check if BLUE exists
                 if docker ps -a --format '{{.Names}}' | grep -q landslide-blue; then
-
-                    echo "Deploying GREEN version..."
                     docker stop landslide-green || true
                     docker rm landslide-green || true
 
                     docker run -d -p 81:5000 --name landslide-green $DOCKER_IMAGE:latest
-
-                    echo "Switching traffic to GREEN..."
 
                     docker stop landslide-blue
                     docker rm landslide-blue
 
                     docker run -d -p 80:5000 --name landslide-blue $DOCKER_IMAGE:latest
 
-                    echo "Cleaning up GREEN..."
                     docker stop landslide-green
                     docker rm landslide-green
-
                 else
-                    echo "First deployment → BLUE"
                     docker stop landslide || true
                     docker rm landslide || true
 
                     docker run -d -p 80:5000 --name landslide-blue $DOCKER_IMAGE:latest
                 fi
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                echo "Deploying to Kubernetes..."
+                kubectl apply -f k8s/
+                kubectl rollout restart deployment landslide-app
                 '''
             }
         }
