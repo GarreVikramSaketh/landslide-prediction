@@ -61,8 +61,8 @@ pipeline {
             steps {
                 sh '''
                 echo "Deploying to Kubernetes..."
-                /usr/bin/kubectl apply -f k8s/
-                /usr/bin/kubectl rollout restart deployment landslide-app
+                /opt/bin/kubectl apply -f k8s/
+                /opt/bin/kubectl rollout restart deployment landslide-app
                 '''
             }
         }
