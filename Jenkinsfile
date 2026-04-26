@@ -60,9 +60,13 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                echo "Installing kubectl..."
+                curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                chmod +x kubectl
+
                 echo "Deploying to Kubernetes..."
-                /opt/bin/kubectl apply -f k8s/
-                /opt/bin/kubectl rollout restart deployment landslide-app
+                ./kubectl apply -f k8s/
+                ./kubectl rollout restart deployment landslide-app
                 '''
             }
         }
