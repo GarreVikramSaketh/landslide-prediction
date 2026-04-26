@@ -60,16 +60,18 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                echo "Deploying to Kubernetes using Docker kubectl..."
+                echo "Deploying to Kubernetes..."
 
                 docker run --rm \
-                  -v $HOME/.kube:/root/.kube \
+                  -e KUBECONFIG=/root/.kube/config.new \
+                  -v /var/jenkins_home/.kube:/root/.kube \
                   -v $(pwd):/app \
                   bitnami/kubectl:latest \
-                  apply -f /app/k8s/
+                  apply -f /app/k8s/ --validate=false
 
                 docker run --rm \
-                  -v $HOME/.kube:/root/.kube \
+                  -e KUBECONFIG=/root/.kube/config.new \
+                  -v /var/jenkins_home/.kube:/root/.kube \
                   -v $(pwd):/app \
                   bitnami/kubectl:latest \
                   rollout restart deployment landslide-app
