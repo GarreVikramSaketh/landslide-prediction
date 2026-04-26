@@ -59,23 +59,36 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                echo "Deploying to Kubernetes..."
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh '''
+                    echo "Deploying to Kubernetes..."
 
-                docker run --rm \
-                  -e KUBECONFIG=/root/.kube/config.new \
-                  -v /var/jenkins_home/.kube:/root/.kube \
-                  -v $(pwd):/app \
-                  bitnami/kubectl:latest \
-                  apply -f /app/k8s/ --validate=false
+                    docker run --rm \
+                      -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                      -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                      -e AWS_DEFAULT_REGION=us-east-1 \
+                      -e KUBECONFIG=/root/.kube/config.new \
+                      -v /var/jenkins_home/.kube:/root/.kube \
+                      -v $(pwd):/app \
+                      bitnami/kubectl:latest \
+                      apply -f /app/k8s/ --validate=false
 
-                docker run --rm \
-                  -e KUBECONFIG=/root/.kube/config.new \
-                  -v /var/jenkins_home/.kube:/root/.kube \
-                  -v $(pwd):/app \
-                  bitnami/kubectl:latest \
-                  rollout restart deployment landslide-app
-                '''
+                    docker run --rm \
+                      -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                      -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                      -e AWS_DEFAULT_REGION=us-east-1 \
+                      -e KUBECONFIG=/root/.kube/config.new \
+                      -v /var/jenkins_home/.kube:/root/.kube \
+                      -v $(pwd):/app \
+                      bitnami/kubectl:latest \
+                      rollout restart deployment landslide-app
+                    '''
+                }
             }
         }
     }
