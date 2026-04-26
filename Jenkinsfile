@@ -62,20 +62,19 @@ pipeline {
                 sh '''
                 echo "Deploying to Kubernetes (EKS)..."
 
-                # Force correct kubectl path
-                export PATH=/usr/bin:/usr/local/bin:$PATH
+                # Ensure correct kubectl (Linux)
+                export PATH=/usr/local/bin:$PATH
 
-                # Debug (to confirm correct binary)
                 echo "PATH=$PATH"
                 which kubectl
-                /usr/bin/kubectl version --client
+                kubectl version --client
 
-                # Configure kubeconfig using EC2 IAM role
+                # Configure kubeconfig (IAM role based)
                 aws eks update-kubeconfig --region us-east-1 --name landslide-cluster
 
-                # Deploy to cluster
-                /usr/bin/kubectl apply -f k8s/
-                /usr/bin/kubectl rollout restart deployment landslide-app
+                # Deploy
+                kubectl apply -f k8s/
+                kubectl rollout restart deployment landslide-app
                 '''
             }
         }
