@@ -59,30 +59,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                    echo "Deploying to Kubernetes (EKS)..."
+                sh '''
+                echo "Deploying to Kubernetes (EKS)..."
 
-                    docker run --rm \
-                      -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                      -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                      -e AWS_DEFAULT_REGION=us-east-1 \
-                      -v /var/jenkins_home/.kube:/root/.kube \
-                      -v $(pwd):/app \
-                      lachlanevenson/k8s-kubectl:latest \
-                      sh -c "
-                        curl -sSL https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/latest/download/aws-iam-authenticator-linux-amd64 -o /usr/local/bin/aws-iam-authenticator &&
-                        chmod +x /usr/local/bin/aws-iam-authenticator &&
-                        kubectl apply -f /app/k8s/ &&
-                        kubectl rollout restart deployment landslide-app
-                      "
-                    '''
-                }
+                aws eks update-kubeconfig --region us-east-1 --name landslide-cluster
+
+                kubectl apply -f k8s/
+                kubectl rollout restart deployment landslide-app
+                '''
             }
         }
     }
