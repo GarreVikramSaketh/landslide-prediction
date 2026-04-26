@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: landslide-service
 spec:
-  type: LoadBalancer   # 🔥 change this
+  type: LoadBalancer
   selector:
-    app: landslide-app
+    app: landslide   # ← change this
   ports:
     - protocol: TCP
       port: 80
