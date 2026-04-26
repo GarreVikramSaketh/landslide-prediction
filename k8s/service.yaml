@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: landslide-service
 spec:
-  type: NodePort
+  type: LoadBalancer   # 🔥 change this
   selector:
-    app: landslide
+    app: landslide-app
   ports:
-    - port: 80
+    - protocol: TCP
+      port: 80
       targetPort: 5000
-      nodePort: 30007
