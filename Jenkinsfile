@@ -66,13 +66,13 @@ pipeline {
                   -v $HOME/.kube:/root/.kube \
                   -v $(pwd):/app \
                   bitnami/kubectl:latest \
-                  kubectl apply -f /app/k8s/
+                  apply -f /app/k8s/
 
                 docker run --rm \
                   -v $HOME/.kube:/root/.kube \
                   -v $(pwd):/app \
                   bitnami/kubectl:latest \
-                  kubectl rollout restart deployment landslide-app
+                  rollout restart deployment landslide-app
                 '''
             }
         }
