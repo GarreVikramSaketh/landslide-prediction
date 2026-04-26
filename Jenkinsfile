@@ -66,27 +66,19 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
-                    echo "Deploying to Kubernetes..."
+                    echo "Deploying to Kubernetes (EKS)..."
 
                     docker run --rm \
                       -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                       -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
                       -e AWS_DEFAULT_REGION=us-east-1 \
-                      -e KUBECONFIG=/root/.kube/config.new \
-                      -v /var/jenkins_home/.kube:/root/.kube \
                       -v $(pwd):/app \
-                      bitnami/kubectl:latest \
-                      apply -f /app/k8s/ --validate=false
-
-                    docker run --rm \
-                      -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                      -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                      -e AWS_DEFAULT_REGION=us-east-1 \
-                      -e KUBECONFIG=/root/.kube/config.new \
-                      -v /var/jenkins_home/.kube:/root/.kube \
-                      -v $(pwd):/app \
-                      bitnami/kubectl:latest \
-                      rollout restart deployment landslide-app
+                      amazon/aws-cli:latest \
+                      sh -c "
+                        aws eks update-kubeconfig --region us-east-1 --name landslide-cluster &&
+                        kubectl apply -f /app/k8s/ &&
+                        kubectl rollout restart deployment landslide-app
+                      "
                     '''
                 }
             }
