@@ -60,14 +60,19 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                echo "Installing kubectl (fixed version)..."
+                echo "Deploying to Kubernetes using Docker kubectl..."
 
-                curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
-                chmod +x kubectl
+                docker run --rm \
+                  -v $HOME/.kube:/root/.kube \
+                  -v $(pwd):/app \
+                  bitnami/kubectl:latest \
+                  kubectl apply -f /app/k8s/
 
-                echo "Deploying to Kubernetes..."
-                ./kubectl apply -f k8s/
-                ./kubectl rollout restart deployment landslide-app
+                docker run --rm \
+                  -v $HOME/.kube:/root/.kube \
+                  -v $(pwd):/app \
+                  bitnami/kubectl:latest \
+                  kubectl rollout restart deployment landslide-app
                 '''
             }
         }
